@@ -57,23 +57,22 @@ lib/
 Outputs live in memory for 10 minutes, then are swept. Swap `lib/tasks.ts` for a
 DB + object store and `lib/pdf.ts` for a queue/worker to productionize.
 
-## File size limits
+## File size limits & upload flow
 
-Uploads are capped at **4 MB**. This is a platform constraint, not an arbitrary
-choice: Vercel serverless functions hard-limit the request body to **4.5 MB**, so
-a file larger than that never reaches the function — it's rejected at the edge.
+Uploads are capped at **25 MB**. Large files work because the source never passes
+through the serverless function (which has a hard **4.5 MB** request-body limit):
 
-**A 20 MB file will not convert on this architecture.** To support large files you
-must bypass the function body limit with a client-direct upload:
+1. The browser calls `upload()` (`@vercel/blob/client`) → `/api/upload` mints a
+   short-lived client token → the file uploads **directly to Vercel Blob**.
+2. The client POSTs `/api/convert` with just the blob URL (a tiny JSON body).
+3. `/api/convert` fetches the file from Blob, renders the PDF, writes the PDF back
+   to Blob, records the URLs + metadata in Neon, and deletes the source blob.
+4. `/api/download/[id]` looks up the output URL in Neon and **redirects** to the
+   public Blob URL — so even large PDFs never stream back through the function.
 
-1. Client requests a presigned URL and uploads straight to object storage
-   (Vercel Blob / S3) — no size limit through the function.
-2. `/api/convert` receives the blob key, streams the file from storage, renders
-   the PDF, and writes the output back to storage.
-3. Neon holds only task metadata + the output key, not the bytes.
-
-That path is the recommended next step for >4 MB support; the current MVP is tuned
-for typical Markdown documents, which are well under the limit.
+Storage: **Vercel Blob** for file bytes (source + output), **Neon** for task
+metadata and the blob URLs. Raise `MAX_UPLOAD_BYTES` in `lib/limits.ts` to go
+higher (Vercel Blob itself supports multi-GB objects).
 
 ## Widget states
 

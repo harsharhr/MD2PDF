@@ -23,13 +23,9 @@ export async function GET(
     );
   }
 
-  return new NextResponse(new Uint8Array(result.output), {
-    status: 200,
-    headers: {
-      "Content-Type": "application/pdf",
-      "Content-Length": String(result.size),
-      "Content-Disposition": `attachment; filename="${result.filename}"`,
-      "Cache-Control": "no-store",
-    },
-  });
+  // Redirect to the public Blob URL with a download disposition. This keeps large
+  // PDFs from streaming back through the serverless function (and its size caps).
+  const target = new URL(result.url);
+  target.searchParams.set("download", result.filename);
+  return NextResponse.redirect(target.toString(), 302);
 }

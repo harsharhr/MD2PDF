@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { put, del } from "@vercel/blob";
 import { renderMarkdown, buildHtmlDocument } from "@/lib/markdown";
 import { htmlToPdf } from "@/lib/pdf";
 import {
@@ -9,39 +10,41 @@ import {
   publicTask,
 } from "@/lib/tasks";
 import { DEFAULT_PAIR } from "@/lib/formats";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-// Vercel serverless functions hard-cap the request body at 4.5 MB, so uploads
-// larger than this can't reach us through a direct multipart POST — we reject
-// them with a clear message rather than letting the platform return an opaque
-// 413. Supporting bigger files requires client-direct-to-blob uploads (see README).
-const MAX_BYTES = 4 * 1024 * 1024;
+// Only accept blob URLs from Vercel Blob storage — never fetch arbitrary URLs.
+function isVercelBlobUrl(u: string): boolean {
+  try {
+    const { protocol, hostname } = new URL(u);
+    return protocol === "https:" && hostname.endsWith(".blob.vercel-storage.com");
+  } catch {
+    return false;
+  }
+}
 
 export async function POST(req: NextRequest) {
-  let form: FormData;
+  let payload: { blobUrl?: string; filename?: string; size?: number };
   try {
-    form = await req.formData();
+    payload = await req.json();
   } catch {
-    return NextResponse.json({ error: "Expected multipart/form-data upload." }, { status: 400 });
+    return NextResponse.json({ error: "Expected a JSON body." }, { status: 400 });
   }
 
-  const file = form.get("file");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "No file provided." }, { status: 400 });
+  const { blobUrl, filename, size } = payload;
+  if (!blobUrl || !isVercelBlobUrl(blobUrl)) {
+    return NextResponse.json({ error: "Missing or invalid upload reference." }, { status: 400 });
   }
-  if (file.size === 0) {
-    return NextResponse.json({ error: "The uploaded file is empty." }, { status: 400 });
-  }
-  if (file.size > MAX_BYTES) {
+  if (typeof size === "number" && size > MAX_UPLOAD_BYTES) {
     return NextResponse.json(
-      { error: `File exceeds the ${MAX_BYTES / 1024 / 1024} MB limit for this plan.` },
+      { error: `File exceeds the ${MAX_UPLOAD_LABEL} limit.` },
       { status: 413 }
     );
   }
 
-  const sourceName = file.name || "document.md";
+  const sourceName = filename || "document.md";
   const outputFilename = sourceName.replace(/\.[^.]+$/, "") + ".pdf";
 
   let id: string;
@@ -50,8 +53,9 @@ export async function POST(req: NextRequest) {
       sourceFilename: sourceName,
       sourceFormat: DEFAULT_PAIR.source.label,
       targetFormat: DEFAULT_PAIR.target.label,
-      inputSizeBytes: file.size,
+      inputSizeBytes: typeof size === "number" ? size : 0,
       outputFilename,
+      sourceUrl: blobUrl,
     });
   } catch {
     return NextResponse.json(
@@ -61,21 +65,38 @@ export async function POST(req: NextRequest) {
   }
 
   try {
-    const markdown = await file.text();
+    const srcRes = await fetch(blobUrl);
+    if (!srcRes.ok) throw new Error("Could not read the uploaded file.");
+    const markdown = await srcRes.text();
     if (!markdown.trim()) throw new Error("The file contains no readable text.");
+
     const bodyHtml = renderMarkdown(markdown);
     const html = buildHtmlDocument(bodyHtml, outputFilename.replace(/\.pdf$/, ""));
     const pdf = await htmlToPdf(html);
-    await completeTask(id, pdf);
+
+    // Store the result in Blob; the id-prefixed path guarantees the download is
+    // named correctly and can't collide with another task's output.
+    const { url } = await put(`converted/${id}/${outputFilename}`, pdf, {
+      access: "public",
+      contentType: "application/pdf",
+      addRandomSuffix: false,
+    });
+    await completeTask(id, url, pdf.byteLength);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Conversion failed.";
     await failTask(id, message);
+  } finally {
+    // The source upload is transient — remove it regardless of outcome.
+    try {
+      await del(blobUrl);
+    } catch {
+      /* best-effort cleanup */
+    }
   }
 
   const row = await getTaskMeta(id);
   if (!row) {
     return NextResponse.json({ error: "Task disappeared unexpectedly." }, { status: 500 });
   }
-  // 200 even on a failed task lets the client render the error state uniformly.
   return NextResponse.json(publicTask(row));
 }

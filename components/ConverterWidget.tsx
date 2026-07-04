@@ -1,9 +1,11 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
+import { upload } from "@vercel/blob/client";
 import type { FormatPair } from "@/lib/formats";
 import type { PublicTask } from "@/lib/tasks";
 import { formatBytes } from "@/lib/format";
+import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
 import StatusBadge from "./StatusBadge";
 
 type ItemStatus = "ready" | "processing" | "finished" | "failed";
@@ -60,14 +62,38 @@ export default function ConverterWidget({ pair }: { pair: FormatPair }) {
   const removeItem = (id: string) => setItems((prev) => prev.filter((i) => i.id !== id));
   const clearAll = () => setItems([]);
 
+  function markFailed(id: string, message: string) {
+    setItems((prev) =>
+      prev.map((i) => (i.id === id ? { ...i, status: "failed", error: message } : i))
+    );
+  }
+
   async function convertOne(item: QueueItem) {
+    if (item.file.size > MAX_UPLOAD_BYTES) {
+      markFailed(item.id, `File exceeds the ${MAX_UPLOAD_LABEL} limit.`);
+      return;
+    }
     setItems((prev) =>
       prev.map((i) => (i.id === item.id ? { ...i, status: "processing", error: null } : i))
     );
     try {
-      const body = new FormData();
-      body.append("file", item.file);
-      const res = await fetch("/api/convert", { method: "POST", body });
+      // 1) Upload the file straight to Vercel Blob (bypasses the 4.5 MB function
+      //    body limit — the bytes never pass through our API).
+      const blob = await upload(item.file.name, item.file, {
+        access: "public",
+        handleUploadUrl: "/api/upload",
+        contentType: item.file.type || "text/markdown",
+      });
+      // 2) Kick off conversion with just the blob reference (a tiny JSON body).
+      const res = await fetch("/api/convert", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          blobUrl: blob.url,
+          filename: item.file.name,
+          size: item.file.size,
+        }),
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.error || "Conversion failed.");
       const task = data as PublicTask;
@@ -82,9 +108,7 @@ export default function ConverterWidget({ pair }: { pair: FormatPair }) {
       );
     } catch (err) {
       const message = err instanceof Error ? err.message : "Conversion failed.";
-      setItems((prev) =>
-        prev.map((i) => (i.id === item.id ? { ...i, status: "failed", error: message } : i))
-      );
+      markFailed(item.id, message);
     }
   }
 
@@ -146,7 +170,7 @@ export default function ConverterWidget({ pair }: { pair: FormatPair }) {
             </button>
           </div>
           <p className="mt-4 text-xs text-ink-3">
-            Accepts {pair.source.extensions.map((e) => "." + e).join(", ")} · up to 4 MB
+            Accepts {pair.source.extensions.map((e) => "." + e).join(", ")} · up to {MAX_UPLOAD_LABEL}
           </p>
         </div>
       ) : (
