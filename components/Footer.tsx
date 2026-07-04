@@ -2,34 +2,40 @@ import Link from "next/link";
 
 const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
   {
-    title: "Company",
+    title: "Popular Tools",
     links: [
-      { label: "About", href: "/#" },
-      { label: "Blog", href: "/#" },
-      { label: "Careers", href: "/#" },
+      { label: "Merge PDF", href: "/tools/merge-pdf" },
+      { label: "Split PDF", href: "/tools/split-pdf" },
+      { label: "Compress PDF", href: "/tools/compress-pdf" },
+      { label: "PDF to Word", href: "/tools/pdf-to-word" },
+      { label: "Word to PDF", href: "/tools/word-to-pdf" },
+    ],
+  },
+  {
+    title: "More Tools",
+    links: [
+      { label: "PDF to Excel", href: "/tools/pdf-to-excel" },
+      { label: "PDF to JPG", href: "/tools/pdf-to-jpg" },
+      { label: "JPG to PDF", href: "/tools/jpg-to-pdf" },
+      { label: "Rotate PDF", href: "/tools/rotate-pdf" },
+      { label: "Protect PDF", href: "/tools/protect-pdf" },
     ],
   },
   {
     title: "Resources",
     links: [
-      { label: "Documentation", href: "/#" },
+      { label: "All Tools", href: "/" },
       { label: "API Reference", href: "/#api" },
-      { label: "Status", href: "/#" },
-    ],
-  },
-  {
-    title: "Legal",
-    links: [
-      { label: "Privacy", href: "/#" },
-      { label: "Terms", href: "/#" },
+      { label: "Pricing", href: "/pricing" },
       { label: "Security", href: "/security" },
     ],
   },
   {
-    title: "Contact",
+    title: "Company",
     links: [
-      { label: "Support", href: "/#" },
-      { label: "Sales", href: "/#" },
+      { label: "About", href: "/#" },
+      { label: "Privacy", href: "/#" },
+      { label: "Terms", href: "/#" },
       { label: "hello@pdftoolsmd.com", href: "mailto:hello@pdftoolsmd.com" },
     ],
   },
@@ -61,8 +67,8 @@ export default function Footer() {
           ))}
         </div>
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 text-xs text-ink-3 sm:flex-row sm:items-center">
-          <p>© {2026} PDFtoolsmd.com. File conversion infrastructure.</p>
-          <p>All processing is isolated and files are deleted after conversion.</p>
+          <p>© {2026} PDFtoolsmd.com. Every PDF tool you need, free and private.</p>
+          <p>Client-side processing — your files never leave your device.</p>
         </div>
       </div>
     </footer>

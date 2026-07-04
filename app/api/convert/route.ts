@@ -37,7 +37,9 @@ export async function POST(req: NextRequest) {
   if (!blobUrl || !isVercelBlobUrl(blobUrl)) {
     return NextResponse.json({ error: "Missing or invalid upload reference." }, { status: 400 });
   }
-  const targetKey: TargetKey = typeof target === "string" && isTarget(target) ? target : "pdf";
+  
+  // If target is "md" (e.g. from pdf-to-md), handle it gracefully
+  const targetKey: TargetKey | "md" = typeof target === "string" && (isTarget(target) || target === "md") ? (target as any) : "pdf";
   if (typeof size === "number" && size > MAX_UPLOAD_BYTES) {
     return NextResponse.json(
       { error: `File exceeds the ${MAX_UPLOAD_LABEL} limit.` },
@@ -53,8 +55,9 @@ export async function POST(req: NextRequest) {
   try {
     id = await createTask({
       sourceFilename: sourceName,
-      sourceFormat: "MD",
-      targetFormat: TARGETS[targetKey].label,
+      // Pass original extension or name
+      sourceFormat: sourceName.split('.').pop()?.toUpperCase() || "MD",
+      targetFormat: targetKey === "md" ? "Markdown" : TARGETS[targetKey as TargetKey].label,
       inputSizeBytes: typeof size === "number" ? size : 0,
       outputFilename,
       sourceUrl: blobUrl,
@@ -69,19 +72,42 @@ export async function POST(req: NextRequest) {
   try {
     const srcRes = await fetch(blobUrl);
     if (!srcRes.ok) throw new Error("Could not read the uploaded file.");
-    const markdown = await srcRes.text();
+    const buffer = Buffer.from(await srcRes.arrayBuffer());
+
+    let markdown: string;
+    const extMatch = sourceName.match(/\.([^.]+)$/);
+    const ext = extMatch ? extMatch[1].toLowerCase() : "md";
+
+    if (["md", "markdown", "mdown", "mkd", "txt"].includes(ext)) {
+      markdown = buffer.toString("utf-8");
+    } else {
+      // Pass to parser
+      const { parseToMarkdown } = await import("@/lib/parse");
+      markdown = await parseToMarkdown(buffer, ext);
+    }
+
     if (!markdown.trim()) throw new Error("The file contains no readable text.");
 
-    const { buffer, contentType } = await convertMarkdown(markdown, targetKey, baseName);
+    let finalBuffer: Buffer;
+    let contentType: string;
+
+    if (targetKey === "md") {
+      finalBuffer = Buffer.from(markdown, "utf-8");
+      contentType = "text/markdown";
+    } else {
+      const result = await convertMarkdown(markdown, targetKey as TargetKey, baseName);
+      finalBuffer = result.buffer;
+      contentType = result.contentType;
+    }
 
     // Store the result in Blob; the id-prefixed path guarantees the download is
     // named correctly and can't collide with another task's output.
-    const { url } = await put(`converted/${id}/${outputFilename}`, buffer, {
+    const { url } = await put(`converted/${id}/${outputFilename}`, finalBuffer, {
       access: "public",
       contentType,
       addRandomSuffix: false,
     });
-    await completeTask(id, url, buffer.byteLength);
+    await completeTask(id, url, finalBuffer.byteLength);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Conversion failed.";
     await failTask(id, message);
