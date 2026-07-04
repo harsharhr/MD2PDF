@@ -15,6 +15,7 @@ const CATEGORY_ORDER: ToolCategory[] = [
   "organize",
   "convert-to-pdf",
   "convert-from-pdf",
+  "convert-from-md",
   "optimize",
   "security",
   "edit",

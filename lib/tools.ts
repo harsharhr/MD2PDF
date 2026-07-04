@@ -7,6 +7,7 @@ export type ToolCategory =
   | "optimize"
   | "convert-to-pdf"
   | "convert-from-pdf"
+  | "convert-from-md"
   | "security"
   | "edit";
 
@@ -33,6 +34,7 @@ export const TOOL_CATEGORIES: Record<ToolCategory, { label: string; color: strin
   optimize: { label: "Optimize", color: "#0891b2" },
   "convert-to-pdf": { label: "Convert to PDF", color: "#c2185b" },
   "convert-from-pdf": { label: "Convert from PDF", color: "#e65100" },
+  "convert-from-md": { label: "Convert from Markdown", color: "#2563eb" },
   security: { label: "Security", color: "#6d28d9" },
   edit: { label: "Edit & Annotate", color: "#0d9488" },
 };
@@ -263,6 +265,50 @@ export const TOOLS: ToolDef[] = [
     accept: ".pdf,application/pdf",
     multiple: false,
     enabled: true,
+  },
+
+  // --- Convert from Markdown ---
+  {
+    slug: "md-to-word",
+    name: "Markdown to Word",
+    tagline: "Easily convert your Markdown files into editable DOCX documents.",
+    description: "Convert Markdown to Word documents with full support for tables, formatting, and headings.",
+    icon: "📝",
+    category: "convert-from-md",
+    accept: ".md,.markdown,.mdown,.mkd,text/markdown",
+    multiple: false,
+    enabled: true,
+    usesServerConversion: true,
+    sourceExt: "md",
+    targetExt: "docx",
+  },
+  {
+    slug: "md-to-powerpoint",
+    name: "Markdown to PowerPoint",
+    tagline: "Turn your Markdown files into easy-to-edit PPTX slideshows.",
+    description: "Convert Markdown content into PowerPoint presentations.",
+    icon: "📊",
+    category: "convert-from-md",
+    accept: ".md,.markdown,.mdown,.mkd,text/markdown",
+    multiple: false,
+    enabled: true,
+    usesServerConversion: true,
+    sourceExt: "md",
+    targetExt: "pptx",
+  },
+  {
+    slug: "md-to-excel",
+    name: "Markdown to Excel",
+    tagline: "Convert Markdown tables straight into Excel spreadsheets.",
+    description: "Extract text and tables from Markdown into Excel spreadsheets.",
+    icon: "📈",
+    category: "convert-from-md",
+    accept: ".md,.markdown,.mdown,.mkd,text/markdown",
+    multiple: false,
+    enabled: true,
+    usesServerConversion: true,
+    sourceExt: "md",
+    targetExt: "xlsx",
   },
 
   // --- Security ---
