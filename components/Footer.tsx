@@ -30,7 +30,7 @@ const COLUMNS: { title: string; links: { label: string; href: string }[] }[] = [
     links: [
       { label: "Support", href: "/#" },
       { label: "Sales", href: "/#" },
-      { label: "hello@markpress.io", href: "mailto:hello@markpress.io" },
+      { label: "hello@pdftoolsmd.com", href: "mailto:hello@pdftoolsmd.com" },
     ],
   },
 ];
@@ -61,7 +61,7 @@ export default function Footer() {
           ))}
         </div>
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 text-xs text-ink-3 sm:flex-row sm:items-center">
-          <p>© {2026} MarkPress. File conversion infrastructure.</p>
+          <p>© {2026} PDFtoolsmd.com. File conversion infrastructure.</p>
           <p>All processing is isolated and files are deleted after conversion.</p>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import type { MetadataRoute } from "next";
 import { FORMAT_PAIRS } from "@/lib/formats";
 
-const SITE_URL = "https://markpress-zeta.vercel.app";
+const SITE_URL = "https://pdftoolsmd.com";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages = ["", "/pricing", "/security"].map((path) => ({

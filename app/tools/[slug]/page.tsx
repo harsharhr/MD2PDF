@@ -15,7 +15,7 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const pair = getFormatPair(slug);
-  if (!pair) return { title: "Converter — MarkPress" };
+  if (!pair) return { title: "Converter — PDFtoolsmd.com" };
   return { title: pair.metaTitle, description: pair.description };
 }
 

@@ -36,7 +36,7 @@ export const FORMAT_PAIRS: FormatPair[] = [
     source: MD_SOURCE,
     target: { label: "PDF", name: "PDF", mime: "application/pdf", extension: "pdf" },
     title: "Markdown to PDF Converter",
-    metaTitle: "Markdown to PDF Converter — MarkPress",
+    metaTitle: "Markdown to PDF Converter — PDFtoolsmd.com",
     description:
       "Turn Markdown files into clean, print-ready PDF documents with full support for tables, code blocks, and headings.",
     benefit:
@@ -53,7 +53,7 @@ export const FORMAT_PAIRS: FormatPair[] = [
       extension: "docx",
     },
     title: "Markdown to Word Converter",
-    metaTitle: "Markdown to Word (DOCX) Converter — MarkPress",
+    metaTitle: "Markdown to Word (DOCX) Converter — PDFtoolsmd.com",
     description:
       "Convert Markdown into an editable Word document with headings, lists, tables, and formatting preserved.",
     benefit: "Hand a teammate a .docx they can edit in Word or Google Docs — no copy-paste cleanup.",
@@ -69,7 +69,7 @@ export const FORMAT_PAIRS: FormatPair[] = [
       extension: "xlsx",
     },
     title: "Markdown to Excel Converter",
-    metaTitle: "Markdown to Excel (XLSX) Converter — MarkPress",
+    metaTitle: "Markdown to Excel (XLSX) Converter — PDFtoolsmd.com",
     description:
       "Extract every table in your Markdown into an Excel workbook — one worksheet per table, ready to sort and filter.",
     benefit: "Get your Markdown tables into spreadsheets without retyping a single cell.",
@@ -85,7 +85,7 @@ export const FORMAT_PAIRS: FormatPair[] = [
       extension: "pptx",
     },
     title: "Markdown to PowerPoint Converter",
-    metaTitle: "Markdown to PowerPoint (PPTX) Converter — MarkPress",
+    metaTitle: "Markdown to PowerPoint (PPTX) Converter — PDFtoolsmd.com",
     description:
       "Turn a Markdown outline into a slide deck — each top-level heading becomes a slide, with bullet points below.",
     benefit: "Draft a deck in plain text and get an editable .pptx to polish in PowerPoint or Keynote.",
@@ -96,7 +96,7 @@ export const FORMAT_PAIRS: FormatPair[] = [
     source: MD_SOURCE,
     target: { label: "HTML", name: "HTML", mime: "text/html", extension: "html" },
     title: "Markdown to HTML Converter",
-    metaTitle: "Markdown to HTML Converter — MarkPress",
+    metaTitle: "Markdown to HTML Converter — PDFtoolsmd.com",
     description:
       "Render Markdown into a clean, self-contained HTML document with styled headings, code, and tables.",
     benefit: "Publish or embed your content anywhere with ready-to-use, styled HTML.",
@@ -107,7 +107,7 @@ export const FORMAT_PAIRS: FormatPair[] = [
     source: MD_SOURCE,
     target: { label: "TXT", name: "Text", mime: "text/plain", extension: "txt" },
     title: "Markdown to Text Converter",
-    metaTitle: "Markdown to Plain Text Converter — MarkPress",
+    metaTitle: "Markdown to Plain Text Converter — PDFtoolsmd.com",
     description: "Strip Markdown syntax and get clean, readable plain text.",
     benefit: "Drop your content into places that don't understand Markdown, with formatting sensibly flattened.",
     enabled: true,
@@ -123,7 +123,7 @@ export const FORMAT_PAIRS: FormatPair[] = [
     },
     target: { label: "MD", name: "Markdown", mime: "text/markdown", extension: "md" },
     title: "PDF to Markdown Converter",
-    metaTitle: "PDF to Markdown Converter — MarkPress",
+    metaTitle: "PDF to Markdown Converter — PDFtoolsmd.com",
     description: "Extract structured Markdown from PDF documents while preserving headings and lists.",
     benefit: "Get editable, version-controllable text back out of static PDF files.",
     enabled: false,

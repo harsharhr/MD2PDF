@@ -18,12 +18,12 @@ const geistMono = Geist_Mono({
 // Google AdSense publisher id — change here if the account changes.
 const ADSENSE_CLIENT = "ca-pub-4910237367995817";
 
-const SITE_URL = "https://markpress-zeta.vercel.app";
+const SITE_URL = "https://pdftoolsmd.com";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),
   title: {
-    default: "MarkPress — Convert Markdown to PDF, Word, Excel & PowerPoint",
+    default: "PDFtoolsmd.com — Convert Markdown to PDF, Word, Excel & PowerPoint",
     template: "%s",
   },
   description:
@@ -35,21 +35,21 @@ export const metadata: Metadata = {
     "markdown to powerpoint",
     "md converter",
     "markdown converter",
-    "MarkPress",
+    "PDFtoolsmd.com",
   ],
-  applicationName: "MarkPress",
+  applicationName: "PDFtoolsmd.com",
   alternates: { canonical: "/" },
   openGraph: {
     type: "website",
-    siteName: "MarkPress",
+    siteName: "PDFtoolsmd.com",
     url: SITE_URL,
-    title: "MarkPress — Convert Markdown to PDF, Word, Excel & PowerPoint",
+    title: "PDFtoolsmd.com — Convert Markdown to PDF, Word, Excel & PowerPoint",
     description:
       "Free online Markdown converter. PDF, Word, Excel, PowerPoint, HTML, and text — files deleted after conversion.",
   },
   twitter: {
     card: "summary_large_image",
-    title: "MarkPress — Markdown converters",
+    title: "PDFtoolsmd.com — Markdown converters",
     description: "Convert Markdown to PDF, Word, Excel, PowerPoint, HTML, and text.",
   },
   // AdSense ownership verification (also present via public/ads.txt).

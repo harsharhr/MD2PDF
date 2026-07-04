@@ -1,4 +1,4 @@
-# MarkPress
+# PDFtoolsmd.com
 
 File conversion infrastructure. This MVP ships a **real** Markdown → PDF converter
 (actual file in, real downloadable PDF out) inside a reusable SaaS shell.
@@ -33,7 +33,7 @@ app/layout.tsx            → Header + <main> + Footer (shared shell, dark-mode 
 components/
   Header.tsx              → logo, nav (Tools/API/Pricing), auth actions, ThemeToggle
   Footer.tsx              → 4-column footer (Company/Resources/Legal/Contact)
-  Logo.tsx                → MarkPress wordmark + glyph
+  Logo.tsx                → PDFtoolsmd.com wordmark + glyph
   ThemeToggle.tsx         → class-based dark mode, persisted to localStorage
   ConverterPage.tsx       → reusable landing template (hero + widget + steps + API)
   ConverterWidget.tsx     → the converter: queue, drag/drop, all 6 states
