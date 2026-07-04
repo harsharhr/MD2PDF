@@ -8,6 +8,9 @@ const nextConfig: NextConfig = {
     "puppeteer-core",
     "@sparticuz/chromium",
     "@neondatabase/serverless",
+    "@turbodocx/html-to-docx",
+    "xlsx",
+    "pptxgenjs",
   ],
   // Force the Chromium binary pack into the /api/convert function bundle. Without
   // this, Next's tracer misses bin/ (loaded via a computed path) and the function

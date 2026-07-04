@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { put, del } from "@vercel/blob";
-import { renderMarkdown, buildHtmlDocument } from "@/lib/markdown";
-import { htmlToPdf } from "@/lib/pdf";
+import { convertMarkdown, isTarget, TARGETS, type TargetKey } from "@/lib/convert";
 import {
   createTask,
   completeTask,
@@ -9,10 +8,11 @@ import {
   getTaskMeta,
   publicTask,
 } from "@/lib/tasks";
-import { DEFAULT_PAIR } from "@/lib/formats";
 import { MAX_UPLOAD_BYTES, MAX_UPLOAD_LABEL } from "@/lib/limits";
 
 export const runtime = "nodejs";
+// Hobby plan caps this at 60s. On Vercel Pro, raise to 300 here AND bump
+// `memory` to 3009 in vercel.json to convert much larger PDFs. See README.
 export const maxDuration = 60;
 
 // Only accept blob URLs from Vercel Blob storage — never fetch arbitrary URLs.
@@ -26,17 +26,18 @@ function isVercelBlobUrl(u: string): boolean {
 }
 
 export async function POST(req: NextRequest) {
-  let payload: { blobUrl?: string; filename?: string; size?: number };
+  let payload: { blobUrl?: string; filename?: string; size?: number; target?: string };
   try {
     payload = await req.json();
   } catch {
     return NextResponse.json({ error: "Expected a JSON body." }, { status: 400 });
   }
 
-  const { blobUrl, filename, size } = payload;
+  const { blobUrl, filename, size, target } = payload;
   if (!blobUrl || !isVercelBlobUrl(blobUrl)) {
     return NextResponse.json({ error: "Missing or invalid upload reference." }, { status: 400 });
   }
+  const targetKey: TargetKey = typeof target === "string" && isTarget(target) ? target : "pdf";
   if (typeof size === "number" && size > MAX_UPLOAD_BYTES) {
     return NextResponse.json(
       { error: `File exceeds the ${MAX_UPLOAD_LABEL} limit.` },
@@ -45,14 +46,15 @@ export async function POST(req: NextRequest) {
   }
 
   const sourceName = filename || "document.md";
-  const outputFilename = sourceName.replace(/\.[^.]+$/, "") + ".pdf";
+  const baseName = sourceName.replace(/\.[^.]+$/, "");
+  const outputFilename = `${baseName}.${targetKey}`;
 
   let id: string;
   try {
     id = await createTask({
       sourceFilename: sourceName,
-      sourceFormat: DEFAULT_PAIR.source.label,
-      targetFormat: DEFAULT_PAIR.target.label,
+      sourceFormat: "MD",
+      targetFormat: TARGETS[targetKey].label,
       inputSizeBytes: typeof size === "number" ? size : 0,
       outputFilename,
       sourceUrl: blobUrl,
@@ -70,18 +72,16 @@ export async function POST(req: NextRequest) {
     const markdown = await srcRes.text();
     if (!markdown.trim()) throw new Error("The file contains no readable text.");
 
-    const bodyHtml = renderMarkdown(markdown);
-    const html = buildHtmlDocument(bodyHtml, outputFilename.replace(/\.pdf$/, ""));
-    const pdf = await htmlToPdf(html);
+    const { buffer, contentType } = await convertMarkdown(markdown, targetKey, baseName);
 
     // Store the result in Blob; the id-prefixed path guarantees the download is
     // named correctly and can't collide with another task's output.
-    const { url } = await put(`converted/${id}/${outputFilename}`, pdf, {
+    const { url } = await put(`converted/${id}/${outputFilename}`, buffer, {
       access: "public",
-      contentType: "application/pdf",
+      contentType,
       addRandomSuffix: false,
     });
-    await completeTask(id, url, pdf.byteLength);
+    await completeTask(id, url, buffer.byteLength);
   } catch (err) {
     const message = err instanceof Error ? err.message : "Conversion failed.";
     await failTask(id, message);

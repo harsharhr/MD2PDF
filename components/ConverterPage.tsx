@@ -1,9 +1,11 @@
-import type { FormatPair } from "@/lib/formats";
+import Link from "next/link";
+import { otherEnabledPairs, type FormatPair } from "@/lib/formats";
 import ConverterWidget from "./ConverterWidget";
 
 // Reusable landing template. Every format-pair page renders through this — only
 // the `pair` config changes, so new pages (PDF→DOCX, etc.) are near-free.
 export default function ConverterPage({ pair }: { pair: FormatPair }) {
+  const others = otherEnabledPairs(pair.slug);
   return (
     <div className="mx-auto max-w-[1180px] px-5">
       {/* Hero */}
@@ -75,6 +77,33 @@ export default function ConverterPage({ pair }: { pair: FormatPair }) {
           </pre>
         </div>
       </section>
+
+      {/* More converters — internal links help users and search engines */}
+      {others.length > 0 && (
+        <section className="mt-16">
+          <h2 className="mb-5 text-lg font-semibold tracking-tight text-ink">More converters</h2>
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            {others.map((p) => (
+              <Link
+                key={p.slug}
+                href={`/tools/${p.slug}`}
+                className="group rounded-xl border border-border bg-surface p-4 transition-colors hover:border-border-strong hover:bg-surface-2"
+              >
+                <div className="mb-2 flex items-center gap-2 text-xs font-semibold">
+                  <span className="rounded-md border border-border bg-surface-2 px-1.5 py-0.5 text-ink-2">
+                    {p.source.label}
+                  </span>
+                  <span className="text-ink-3">→</span>
+                  <span className="rounded-md bg-accent-soft px-1.5 py-0.5 text-accent">
+                    {p.target.label}
+                  </span>
+                </div>
+                <p className="text-sm font-medium text-ink group-hover:text-ink">{p.title}</p>
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
     </div>
   );
 }
@@ -89,8 +118,8 @@ const STEPS = [
     body: "Tables, code blocks, and headings are laid out with print-quality margins and page breaks.",
   },
   {
-    title: "Download the PDF",
-    body: "Grab a polished, self-contained PDF. The source and output are deleted shortly after.",
+    title: "Download the result",
+    body: "Grab a polished, ready-to-use file. The source and output are deleted shortly after.",
   },
 ];
 

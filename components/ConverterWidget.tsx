@@ -92,6 +92,7 @@ export default function ConverterWidget({ pair }: { pair: FormatPair }) {
           blobUrl: blob.url,
           filename: item.file.name,
           size: item.file.size,
+          target: pair.target.extension,
         }),
       });
       const data = await res.json();

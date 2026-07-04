@@ -74,6 +74,34 @@ Storage: **Vercel Blob** for file bytes (source + output), **Neon** for task
 metadata and the blob URLs. Raise `MAX_UPLOAD_BYTES` in `lib/limits.ts` to go
 higher (Vercel Blob itself supports multi-GB objects).
 
+## Converters
+
+Every converter is config-driven (`lib/formats.ts`) and dispatched by target in
+`lib/convert.ts`. Live tools:
+
+| Route | Output | Engine |
+|-------|--------|--------|
+| `/` and `/tools/md-to-pdf` | PDF | Chromium (puppeteer / @sparticuz) |
+| `/tools/md-to-word` | Word `.docx` | @turbodocx/html-to-docx |
+| `/tools/md-to-excel` | Excel `.xlsx` | SheetJS (one sheet per Markdown table) |
+| `/tools/md-to-powerpoint` | PowerPoint `.pptx` | pptxgenjs (one slide per heading) |
+| `/tools/md-to-html` | HTML | markdown-it |
+| `/tools/md-to-text` | Plain text | markdown-it strip |
+
+The office formats are pure JS (no Chromium), so they render fast and handle
+large files without the PDF path's memory/time constraints.
+
+## Upgrading to Vercel Pro (bigger PDFs)
+
+The PDF engine is bounded by the Hobby plan (60s / 2048 MB). Once on Pro, two edits
+unlock much larger PDF conversions — no code changes elsewhere:
+
+1. `vercel.json` → `functions["app/api/convert/route.ts"].memory`: `2048` → `3009`
+   and `maxDuration`: `60` → `300`.
+2. `app/api/convert/route.ts` → `export const maxDuration = 300`.
+
+Then redeploy. (DOCX/XLSX/PPTX/HTML/TXT already handle large files on any plan.)
+
 ## Widget states
 
 Empty (dropzone) · Uploaded/Ready (file row + chips) · Processing (spinner) ·

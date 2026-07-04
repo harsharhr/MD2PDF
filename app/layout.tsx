@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import Script from "next/script";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
 import Header from "@/components/Header";
@@ -14,10 +15,45 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+// Google AdSense publisher id — change here if the account changes.
+const ADSENSE_CLIENT = "ca-pub-4910237367995817";
+
+const SITE_URL = "https://markpress-zeta.vercel.app";
+
 export const metadata: Metadata = {
-  title: "MarkPress — File conversion infrastructure",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "MarkPress — Convert Markdown to PDF, Word, Excel & PowerPoint",
+    template: "%s",
+  },
   description:
-    "Convert Markdown to clean, print-ready PDF. Fast, isolated, and built on reliable conversion infrastructure.",
+    "Free online Markdown converter. Turn Markdown into PDF, Word, Excel, PowerPoint, HTML, or plain text — fast, isolated, and files deleted after conversion.",
+  keywords: [
+    "markdown to pdf",
+    "markdown to word",
+    "markdown to excel",
+    "markdown to powerpoint",
+    "md converter",
+    "markdown converter",
+    "MarkPress",
+  ],
+  applicationName: "MarkPress",
+  alternates: { canonical: "/" },
+  openGraph: {
+    type: "website",
+    siteName: "MarkPress",
+    url: SITE_URL,
+    title: "MarkPress — Convert Markdown to PDF, Word, Excel & PowerPoint",
+    description:
+      "Free online Markdown converter. PDF, Word, Excel, PowerPoint, HTML, and text — files deleted after conversion.",
+  },
+  twitter: {
+    card: "summary_large_image",
+    title: "MarkPress — Markdown converters",
+    description: "Convert Markdown to PDF, Word, Excel, PowerPoint, HTML, and text.",
+  },
+  // AdSense ownership verification (also present via public/ads.txt).
+  other: { "google-adsense-account": ADSENSE_CLIENT },
 };
 
 // Set the theme class before paint to avoid a flash of the wrong theme.
@@ -44,6 +80,14 @@ export default function RootLayout({
         <script dangerouslySetInnerHTML={{ __html: themeScript }} />
       </head>
       <body className="flex min-h-full flex-col antialiased">
+        {/* Google AdSense loader */}
+        <Script
+          id="adsense"
+          async
+          strategy="afterInteractive"
+          src={`https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=${ADSENSE_CLIENT}`}
+          crossOrigin="anonymous"
+        />
         <Header />
         <main className="flex-1">{children}</main>
         <Footer />
