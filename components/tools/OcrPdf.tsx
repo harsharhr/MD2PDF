@@ -32,14 +32,10 @@ export default function OcrPdf() {
   };
 
   const processFile = () => {
-    setProcessing(true);
-    setDone(false);
-    
-    // Simulate OCR delay
-    setTimeout(() => {
-      setProcessing(false);
-      setDone(true);
-    }, 2000);
+    // Real OCR (tesseract.js) isn't wired up yet — say so immediately instead
+    // of running a fake progress spinner first.
+    setProcessing(false);
+    setDone(true);
   };
 
   return (

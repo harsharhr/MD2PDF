@@ -1,7 +1,6 @@
 "use client";
 
 import { useCallback, useRef, useState } from "react";
-import { PDFDocument } from "pdf-lib";
 import { formatBytes } from "@/lib/format";
 
 export default function ProtectPdf() {
@@ -38,38 +37,16 @@ export default function ProtectPdf() {
     if (e.dataTransfer.files?.length) addFile(e.dataTransfer.files);
   };
 
-  const processFile = async () => {
+  const processFile = () => {
     if (!file) return;
     if (!password) {
       setError("Please enter a password.");
       return;
     }
-    setProcessing(true);
-    setError(null);
-    setDone(false);
-    
-    try {
-      const bytes = await file.arrayBuffer();
-      const pdf = await PDFDocument.load(bytes);
-      
-      // Simulate protection
-      pdf.setSubject("Protected Document");
-      
-      const pdfBytes = await pdf.save();
-      const blob = new Blob([pdfBytes as BlobPart], { type: "application/pdf" });
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `protected_${file.name}`;
-      a.click();
-      URL.revokeObjectURL(url);
-      setDone(true);
-      setError("Note: True AES encryption is not fully supported by the client-side library. This is a simulation.");
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Processing failed.");
-    } finally {
-      setProcessing(false);
-    }
+    // pdf-lib (the client-side library this tool would use) doesn't support
+    // real PDF encryption. Rather than download a file that LOOKS protected
+    // but isn't password-locked at all, say so honestly instead.
+    setError("Real password protection isn't available yet — no file was downloaded. We didn't want to hand you a PDF that looks locked but isn't.");
   };
 
   return (

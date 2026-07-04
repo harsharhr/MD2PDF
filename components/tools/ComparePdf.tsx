@@ -2,10 +2,6 @@
 
 import { useCallback, useRef, useState } from "react";
 import { formatBytes } from "@/lib/format";
-// Typically we'd use pdf.js to extract text robustly, 
-// since pdf-lib does not support text extraction. 
-// For this UI mockup, we will show a placeholder diff 
-// since building a full text extractor in pure JS here is out of scope.
 
 export default function ComparePdf() {
   const [file1, setFile1] = useState<File | null>(null);
@@ -13,10 +9,8 @@ export default function ComparePdf() {
   const [dragOver1, setDragOver1] = useState(false);
   const [dragOver2, setDragOver2] = useState(false);
   
-  const [processing, setProcessing] = useState(false);
-  const [done, setDone] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  
+
   const inputRef1 = useRef<HTMLInputElement>(null);
   const inputRef2 = useRef<HTMLInputElement>(null);
 
@@ -30,31 +24,20 @@ export default function ComparePdf() {
     if (pdfs.length > 0) setFile2(pdfs[0]);
   }, []);
 
-  const clearAll = () => {
-    setFile1(null);
-    setFile2(null);
-    setDone(false);
-    setError(null);
-  };
-
   const processFiles = () => {
-    setProcessing(true);
-    setDone(false);
-    setError(null);
-    
-    // Simulate processing
-    setTimeout(() => {
-      setProcessing(false);
-      setDone(true);
-      setError("Note: Full structural comparison requires server-side processing. This is a mockup interface.");
-    }, 1500);
+    // Real text-extraction + diff isn't wired up yet — say so honestly instead
+    // of fabricating a diff.
+    setError("PDF comparison is still in development and isn't available yet. Check back soon.");
   };
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.12)] sm:p-4">
-      
-      {!done ? (
-         <>
+      <>
+            {error && (
+              <div className="mb-4 flex items-center gap-3 rounded-lg bg-warn-soft px-3 py-2 text-warn">
+                <p className="text-xs">{error}</p>
+              </div>
+            )}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {/* File 1 */}
                <div
@@ -125,55 +108,13 @@ export default function ComparePdf() {
               <button
                 type="button"
                 onClick={processFiles}
-                disabled={processing || !file1 || !file2}
+                disabled={!file1 || !file2}
                 className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                {processing ? (
-                  <>
-                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-ink/40 border-t-accent-ink" />
-                    Comparing…
-                  </>
-                ) : (
-                  <>Compare Documents</>
-                )}
+                Compare Documents
               </button>
             </div>
          </>
-      ) : (
-         <div className="space-y-4">
-            <div className="flex justify-between items-center bg-surface-2/50 border border-border p-3 rounded-xl">
-               <h3 className="text-sm font-medium text-ink">Comparison Results</h3>
-               <button onClick={clearAll} className="text-xs text-ink-3 hover:text-ink">Start over</button>
-            </div>
-            
-            {error && (
-              <div className="flex items-center gap-3 rounded-lg bg-warn-soft px-3 py-2 text-warn">
-                <p className="text-xs">{error}</p>
-              </div>
-            )}
-            
-            <div className="grid grid-cols-2 gap-4 text-xs font-mono border border-border rounded-lg overflow-hidden bg-surface">
-               <div className="p-4 border-r border-border bg-err-soft/10">
-                  <h4 className="font-sans font-semibold mb-3 border-b border-border pb-2 text-ink">Original: {file1?.name}</h4>
-                  <div className="space-y-1">
-                     <p>1. Contract terms and conditions</p>
-                     <p className="bg-err-soft text-err p-0.5 rounded">2. Payment is due within 30 days.</p>
-                     <p>3. All sales are final.</p>
-                     <p className="text-ink-3 italic mt-4">[Simulated text extraction]</p>
-                  </div>
-               </div>
-               <div className="p-4 bg-ok-soft/10">
-                  <h4 className="font-sans font-semibold mb-3 border-b border-border pb-2 text-ink">Modified: {file2?.name}</h4>
-                  <div className="space-y-1">
-                     <p>1. Contract terms and conditions</p>
-                     <p className="bg-ok-soft text-ok p-0.5 rounded">2. Payment is due within 15 days.</p>
-                     <p>3. All sales are final.</p>
-                     <p className="bg-ok-soft text-ok p-0.5 rounded mt-2">+ 4. Late fees apply.</p>
-                  </div>
-               </div>
-            </div>
-         </div>
-      )}
 
       <input ref={inputRef1} type="file" accept=".pdf,application/pdf" className="hidden" onChange={(e) => { if (e.target.files) addFile1(e.target.files); e.target.value = ""; }} />
       <input ref={inputRef2} type="file" accept=".pdf,application/pdf" className="hidden" onChange={(e) => { if (e.target.files) addFile2(e.target.files); e.target.value = ""; }} />

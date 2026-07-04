@@ -19,7 +19,7 @@
     "next": "16.2.10",
     "officeparser": "^7.2.3",
     "pdf-lib": "^1.17.1",
-    "pdf-parse": "^2.4.5",
+    "pdf-parse": "^1.1.1",
     "pptxgenjs": "^4.0.1",
     "puppeteer-core": "^25.3.0",
     "react": "19.2.4",
