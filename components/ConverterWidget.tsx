@@ -146,7 +146,7 @@ export default function ConverterWidget({ pair }: { pair: FormatPair }) {
             </button>
           </div>
           <p className="mt-4 text-xs text-ink-3">
-            Accepts {pair.source.extensions.map((e) => "." + e).join(", ")} · up to 5 MB
+            Accepts {pair.source.extensions.map((e) => "." + e).join(", ")} · up to 4 MB
           </p>
         </div>
       ) : (

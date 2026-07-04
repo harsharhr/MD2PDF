@@ -13,7 +13,11 @@ import { DEFAULT_PAIR } from "@/lib/formats";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_BYTES = 5 * 1024 * 1024; // Free-tier file-size limit
+// Vercel serverless functions hard-cap the request body at 4.5 MB, so uploads
+// larger than this can't reach us through a direct multipart POST — we reject
+// them with a clear message rather than letting the platform return an opaque
+// 413. Supporting bigger files requires client-direct-to-blob uploads (see README).
+const MAX_BYTES = 4 * 1024 * 1024;
 
 export async function POST(req: NextRequest) {
   let form: FormData;

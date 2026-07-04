@@ -9,6 +9,12 @@ const nextConfig: NextConfig = {
     "@sparticuz/chromium",
     "@neondatabase/serverless",
   ],
+  // Force the Chromium binary pack into the /api/convert function bundle. Without
+  // this, Next's tracer misses bin/ (loaded via a computed path) and the function
+  // throws "input directory .../@sparticuz/chromium/bin does not exist" on Vercel.
+  outputFileTracingIncludes: {
+    "/api/convert": ["./node_modules/@sparticuz/chromium/bin/**/*"],
+  },
 };
 
 export default nextConfig;

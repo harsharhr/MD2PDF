@@ -57,6 +57,24 @@ lib/
 Outputs live in memory for 10 minutes, then are swept. Swap `lib/tasks.ts` for a
 DB + object store and `lib/pdf.ts` for a queue/worker to productionize.
 
+## File size limits
+
+Uploads are capped at **4 MB**. This is a platform constraint, not an arbitrary
+choice: Vercel serverless functions hard-limit the request body to **4.5 MB**, so
+a file larger than that never reaches the function — it's rejected at the edge.
+
+**A 20 MB file will not convert on this architecture.** To support large files you
+must bypass the function body limit with a client-direct upload:
+
+1. Client requests a presigned URL and uploads straight to object storage
+   (Vercel Blob / S3) — no size limit through the function.
+2. `/api/convert` receives the blob key, streams the file from storage, renders
+   the PDF, and writes the output back to storage.
+3. Neon holds only task metadata + the output key, not the bytes.
+
+That path is the recommended next step for >4 MB support; the current MVP is tuned
+for typical Markdown documents, which are well under the limit.
+
 ## Widget states
 
 Empty (dropzone) · Uploaded/Ready (file row + chips) · Processing (spinner) ·
