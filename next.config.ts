@@ -13,6 +13,13 @@ const nextConfig: NextConfig = {
     "@sparticuz/chromium",
     "@neondatabase/serverless",
     "xlsx",
+    "pdf-parse",
+    // officeparser carries its own pdfjs-dist + tesseract.js — bundling it (the
+    // default) breaks their internal asset/worker resolution. Works fine
+    // unbundled locally, fails silently-crashed in the Vercel function; keep
+    // it external so it runs straight from node_modules like a normal Node dep.
+    "officeparser",
+    "mammoth",
   ],
   // Force the Chromium binary pack into the /api/convert function bundle. Without
   // this, Next's tracer misses bin/ (loaded via a computed path) and the function
