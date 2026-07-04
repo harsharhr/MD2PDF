@@ -37,16 +37,41 @@ export default function ProtectPdf() {
     if (e.dataTransfer.files?.length) addFile(e.dataTransfer.files);
   };
 
-  const processFile = () => {
+  const processFile = async () => {
     if (!file) return;
     if (!password) {
       setError("Please enter a password.");
       return;
     }
-    // pdf-lib (the client-side library this tool would use) doesn't support
-    // real PDF encryption. Rather than download a file that LOOKS protected
-    // but isn't password-locked at all, say so honestly instead.
-    setError("Real password protection isn't available yet — no file was downloaded. We didn't want to hand you a PDF that looks locked but isn't.");
+    
+    setProcessing(true);
+    setError(null);
+    setDone(false);
+
+    try {
+      const { encryptPDF } = await import("@pdfsmaller/pdf-encrypt");
+      const arrayBuffer = await file.arrayBuffer();
+      const pdfBytes = new Uint8Array(arrayBuffer);
+      
+      const encryptedBytes = await encryptPDF(pdfBytes, password, {
+        algorithm: "AES-256",
+      });
+
+      const blob = new Blob([encryptedBytes as BlobPart], { type: "application/pdf" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = file.name.replace(".pdf", "_protected.pdf");
+      a.click();
+      URL.revokeObjectURL(url);
+      
+      setDone(true);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to encrypt the PDF.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (

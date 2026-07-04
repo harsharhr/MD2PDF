@@ -24,20 +24,54 @@ export default function ComparePdf() {
     if (pdfs.length > 0) setFile2(pdfs[0]);
   }, []);
 
-  const processFiles = () => {
-    // Real text-extraction + diff isn't wired up yet — say so honestly instead
-    // of fabricating a diff.
-    setError("PDF comparison is still in development and isn't available yet. Check back soon.");
+  const [processing, setProcessing] = useState(false);
+  const [diffResult, setDiffResult] = useState<any[] | null>(null);
+
+  const processFiles = async () => {
+    if (!file1 || !file2) return;
+    setProcessing(true);
+    setError(null);
+    setDiffResult(null);
+    try {
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+      const extractText = async (file: File) => {
+        const arrayBuffer = await file.arrayBuffer();
+        const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+        let fullText = "";
+        for (let i = 1; i <= pdf.numPages; i++) {
+          const page = await pdf.getPage(i);
+          const content = await page.getTextContent();
+          const strings = content.items.map((item: any) => item.str);
+          fullText += strings.join(" ") + "\n";
+        }
+        return fullText;
+      };
+
+      const [text1, text2] = await Promise.all([extractText(file1), extractText(file2)]);
+      
+      const Diff = await import("diff");
+      const differences = Diff.diffWordsWithSpace(text1, text2);
+      
+      setDiffResult(differences);
+    } catch (err) {
+      console.error(err);
+      setError("Failed to compare the documents. They might be corrupted or secured.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
     <div className="rounded-2xl border border-border bg-surface p-3 shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_-12px_rgba(0,0,0,0.12)] sm:p-4">
       <>
             {error && (
-              <div className="mb-4 flex items-center gap-3 rounded-lg bg-warn-soft px-3 py-2 text-warn">
+              <div className="mb-4 flex items-center gap-3 rounded-lg bg-err-soft px-3 py-2 text-err">
                 <p className="text-xs">{error}</p>
               </div>
             )}
+            
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {/* File 1 */}
                <div
@@ -104,14 +138,45 @@ export default function ComparePdf() {
                </div>
             </div>
 
+            {diffResult && (
+              <div className="mt-4 rounded-xl border border-border bg-surface p-4 shadow-sm">
+                <p className="text-sm font-semibold text-ink mb-3">Comparison Results</p>
+                <div className="flex gap-4 mb-3 text-xs">
+                  <span className="flex items-center gap-1"><div className="w-3 h-3 bg-[#e6ffed] border border-[#a3ebb1] rounded-sm"></div> Added</span>
+                  <span className="flex items-center gap-1"><div className="w-3 h-3 bg-[#ffeef0] border border-[#f4a9b4] rounded-sm"></div> Removed</span>
+                </div>
+                <div className="max-h-96 overflow-y-auto whitespace-pre-wrap text-sm text-ink-2 bg-surface-2 p-3 rounded-lg border border-border font-mono leading-relaxed">
+                  {diffResult.map((part, index) => (
+                    <span 
+                      key={index}
+                      className={
+                        part.added ? "bg-[#e6ffed] text-[#22863a] py-0.5 rounded-sm" :
+                        part.removed ? "bg-[#ffeef0] text-[#cb2431] line-through py-0.5 rounded-sm" :
+                        ""
+                      }
+                    >
+                      {part.value}
+                    </span>
+                  ))}
+                </div>
+              </div>
+            )}
+
             <div className="flex justify-end pt-4 mt-4 border-t border-border">
               <button
                 type="button"
                 onClick={processFiles}
-                disabled={!file1 || !file2}
+                disabled={!file1 || !file2 || processing}
                 className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
               >
-                Compare Documents
+                {processing ? (
+                  <>
+                    <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-ink/40 border-t-accent-ink" />
+                    Comparing...
+                  </>
+                ) : (
+                  <>Compare Documents</>
+                )}
               </button>
             </div>
          </>

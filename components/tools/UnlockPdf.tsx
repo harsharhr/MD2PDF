@@ -50,11 +50,11 @@ export default function UnlockPdf() {
     
     try {
       const bytes = await file.arrayBuffer();
-      // Using pdf-lib to load and passing password. If it fails, it will throw an error.
-      const pdf = await PDFDocument.load(bytes, { ignoreEncryption: password.length > 0 });
+      const { decryptPDF } = await import("@pdfsmaller/pdf-decrypt");
       
-      const pdfBytes = await pdf.save();
-      const blob = new Blob([pdfBytes as BlobPart], { type: "application/pdf" });
+      const decryptedBytes = await decryptPDF(new Uint8Array(bytes), password);
+      
+      const blob = new Blob([decryptedBytes as BlobPart], { type: "application/pdf" });
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;

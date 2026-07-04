@@ -31,11 +31,51 @@ export default function OcrPdf() {
     if (e.dataTransfer.files?.length) addFile(e.dataTransfer.files);
   };
 
-  const processFile = () => {
-    // Real OCR (tesseract.js) isn't wired up yet — say so immediately instead
-    // of running a fake progress spinner first.
-    setProcessing(false);
-    setDone(true);
+  const [progress, setProgress] = useState(0);
+  const [ocrText, setOcrText] = useState("");
+
+  const processFile = async () => {
+    if (!file) return;
+    setProcessing(true);
+    setProgress(0);
+    setOcrText("");
+
+    try {
+      // Dynamically import to avoid Next.js SSR DOMMatrix errors
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
+      const arrayBuffer = await file.arrayBuffer();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(arrayBuffer) }).promise;
+      const page = await pdf.getPage(1); // OCR first page for now
+
+      const viewport = page.getViewport({ scale: 2.0 }); // high res for OCR
+      const canvas = document.createElement("canvas");
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      const ctx = canvas.getContext("2d")!;
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      await page.render({ canvasContext: ctx, viewport } as any).promise;
+
+      // Now run Tesseract
+      const Tesseract = await import("tesseract.js");
+      const result = await Tesseract.recognize(canvas, "eng", {
+        logger: (m) => {
+          if (m.status === "recognizing text") {
+            setProgress(Math.round(m.progress * 100));
+          }
+        },
+      });
+
+      setOcrText(result.data.text);
+      setDone(true);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to OCR the document.");
+    } finally {
+      setProcessing(false);
+    }
   };
 
   return (
@@ -96,31 +136,25 @@ export default function OcrPdf() {
             <p className="text-xs text-ink-2 mb-4 leading-relaxed">
               OCR processing uses Tesseract.js which will be downloaded on first use (~2MB). Processing may take a few minutes for large documents as everything happens locally in your browser.
             </p>
-            
-            <div className="flex items-center gap-4">
-               <div>
-                  <label className="block text-xs font-medium text-ink-2 mb-1">Language</label>
-                  <select className="rounded-md border border-border bg-surface px-2 py-1 text-sm outline-none focus:border-accent">
-                     <option>English</option>
-                     <option>Spanish</option>
-                     <option>French</option>
-                     <option>German</option>
-                  </select>
-               </div>
-               <div>
-                  <label className="block text-xs font-medium text-ink-2 mb-1">Output format</label>
-                  <select className="rounded-md border border-border bg-surface px-2 py-1 text-sm outline-none focus:border-accent">
-                     <option>Searchable PDF</option>
-                     <option>Plain Text (.txt)</option>
-                  </select>
-               </div>
-            </div>
           </div>
 
-          {done && (
-            <div className="flex flex-col gap-2 rounded-lg bg-warn-soft px-3 py-3 border border-warn/20">
-              <p className="text-sm font-medium text-warn">Coming Soon</p>
-              <p className="text-xs text-warn/80">Client-side OCR processing is being finalized and will be available in the next update.</p>
+          {processing && (
+            <div className="flex flex-col gap-2 rounded-lg bg-accent-soft px-3 py-3 border border-accent/20">
+              <p className="text-sm font-medium text-accent">Extracting text... {progress}%</p>
+              <div className="h-1.5 w-full bg-accent/20 rounded-full overflow-hidden">
+                <div className="h-full bg-accent transition-all duration-300" style={{ width: `${progress}%` }} />
+              </div>
+            </div>
+          )}
+
+          {done && ocrText && (
+            <div className="flex flex-col gap-2 rounded-lg bg-surface px-4 py-4 border border-border shadow-sm">
+              <p className="text-sm font-semibold text-ink">Extraction Complete (Page 1)</p>
+              <textarea 
+                className="w-full h-48 rounded-md border border-border p-3 text-sm text-ink bg-surface-2 focus:outline-none focus:border-accent"
+                readOnly
+                value={ocrText}
+              />
             </div>
           )}
 
@@ -128,16 +162,16 @@ export default function OcrPdf() {
             <button
               type="button"
               onClick={processFile}
-              disabled={processing || done}
+              disabled={processing}
               className="inline-flex items-center gap-2 rounded-lg bg-accent px-5 py-2.5 text-sm font-semibold text-accent-ink transition-opacity hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-40"
             >
               {processing ? (
                 <>
                   <span className="h-4 w-4 animate-spin rounded-full border-2 border-accent-ink/40 border-t-accent-ink" />
-                  Initializing OCR Engine…
+                  Processing...
                 </>
               ) : (
-                <>Start OCR</>
+                <>{done ? "Rerun OCR" : "Start OCR"}</>
               )}
             </button>
           </div>

@@ -30,74 +30,46 @@ export default function PdfToJpg() {
     setProcessing(true);
 
     try {
+      const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+      pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+
       const buffer = await f.arrayBuffer();
-      const pdf = await PDFDocument.load(buffer, { ignoreEncryption: true });
-      const pages = pdf.getPageCount();
+      const pdf = await pdfjsLib.getDocument({ data: new Uint8Array(buffer) }).promise;
+      const pages = pdf.numPages;
       setPageCount(pages);
 
-      // Attempt to extract embedded images
       const extracted: ExtractedImage[] = [];
-      const enumeratedNames = new Set<string>();
 
-      try {
-        const embeddedImages = pdf.context.enumerateIndirectObjects();
-        for (const [ref, obj] of embeddedImages) {
-          // Look for image XObjects in the PDF
-          if (obj && typeof obj === "object" && "lookup" in pdf.context) {
-            // pdf-lib doesn't expose a clean image extraction API,
-            // so we try to identify stream objects with image subtypes
-            const resolved = pdf.context.lookup(ref);
-            if (
-              resolved &&
-              typeof resolved === "object" &&
-              "dict" in (resolved as unknown as Record<string, unknown>) &&
-              "contents" in (resolved as unknown as Record<string, unknown>)
-            ) {
-              const dict = (resolved as unknown as { dict: Map<unknown, { toString: () => string }> }).dict;
-              const contents = (resolved as unknown as { contents: () => Uint8Array }).contents;
-              if (dict && typeof dict.get === "function") {
-                const subtype = dict.get(pdf.context.obj("/Subtype"));
-                if (subtype && subtype.toString() === "/Image") {
-                  const filter = dict.get(pdf.context.obj("/Filter"));
-                  const filterStr = filter ? filter.toString() : "";
-                  const imgBytes = typeof contents === "function" ? contents() : null;
+      for (let i = 1; i <= pages; i++) {
+        const page = await pdf.getPage(i);
+        const viewport = page.getViewport({ scale: 2.0 }); // 2x scale for better quality
+        const canvas = document.createElement("canvas");
+        canvas.width = viewport.width;
+        canvas.height = viewport.height;
+        const ctx = canvas.getContext("2d")!;
+        
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-                  if (imgBytes && imgBytes.length > 100) {
-                    let name = `image_${extracted.length + 1}`;
-                    while (enumeratedNames.has(name)) name += "_";
-                    enumeratedNames.add(name);
+        await page.render({ canvasContext: ctx, viewport } as any).promise;
 
-                    let mime = "image/png";
-                    let ext = "png";
-                    if (filterStr.includes("DCTDecode")) {
-                      mime = "image/jpeg";
-                      ext = "jpg";
-                    }
-
-                    extracted.push({
-                      name: `${name}.${ext}`,
-                      bytes: imgBytes,
-                      mime,
-                      width: 0,
-                      height: 0,
-                    });
-                  }
-                }
-              }
-            }
-          }
+        const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.9));
+        if (blob) {
+          const arrayBuffer = await blob.arrayBuffer();
+          extracted.push({
+            name: `page_${i}.jpg`,
+            bytes: new Uint8Array(arrayBuffer),
+            mime: "image/jpeg",
+            width: canvas.width,
+            height: canvas.height,
+          });
         }
-      } catch {
-        // Image extraction is best-effort
       }
 
-      if (extracted.length > 0) {
-        setImages(extracted);
-      } else {
-        setNoImages(true);
-      }
+      setImages(extracted);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to read PDF.");
+      console.error(err);
+      setError(err instanceof Error ? err.message : "Failed to rasterize PDF.");
     } finally {
       setProcessing(false);
     }
@@ -122,11 +94,22 @@ export default function PdfToJpg() {
   };
 
   const downloadAllAsZip = async () => {
-    // Simple concatenated download — for a real ZIP we'd need a zip library.
-    // Download each image individually as a fallback.
-    for (const img of images) {
-      downloadImage(img);
-      await new Promise((r) => setTimeout(r, 300));
+    try {
+      const JSZip = (await import("jszip")).default;
+      const zip = new JSZip();
+      for (const img of images) {
+        zip.file(img.name, img.bytes);
+      }
+      const zipBlob = await zip.generateAsync({ type: "blob" });
+      const url = URL.createObjectURL(zipBlob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `${file?.name.replace(".pdf", "")}_images.zip`;
+      a.click();
+      URL.revokeObjectURL(url);
+    } catch (err) {
+      console.error(err);
+      alert("Failed to create ZIP file.");
     }
   };
 

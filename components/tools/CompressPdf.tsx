@@ -10,6 +10,7 @@ export default function CompressPdf() {
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<{ originalSize: number; compressedSize: number; bytes: Uint8Array } | null>(null);
+  const [aggressive, setAggressive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
 
   const loadFile = useCallback((f: File) => {
@@ -32,22 +33,59 @@ export default function CompressPdf() {
     setResult(null);
     try {
       const srcBytes = await file.arrayBuffer();
-      const srcDoc = await PDFDocument.load(srcBytes, { ignoreEncryption: true });
+      
+      let pdfBytes: Uint8Array;
 
-      // Strip metadata
-      srcDoc.setTitle("");
-      srcDoc.setAuthor("");
-      srcDoc.setSubject("");
-      srcDoc.setKeywords([]);
-      srcDoc.setProducer("");
-      srcDoc.setCreator("");
+      if (aggressive) {
+        const pdfjsLib = await import("pdfjs-dist/legacy/build/pdf.mjs");
+        pdfjsLib.GlobalWorkerOptions.workerSrc = `//cdnjs.cloudflare.com/ajax/libs/pdf.js/${pdfjsLib.version}/pdf.worker.min.mjs`;
+        
+        const srcPdf = await pdfjsLib.getDocument({ data: new Uint8Array(srcBytes) }).promise;
+        const newDoc = await PDFDocument.create();
+        
+        for (let i = 1; i <= srcPdf.numPages; i++) {
+          const page = await srcPdf.getPage(i);
+          const viewport = page.getViewport({ scale: 1.5 });
+          const canvas = document.createElement("canvas");
+          canvas.width = viewport.width;
+          canvas.height = viewport.height;
+          const ctx = canvas.getContext("2d")!;
+          ctx.fillStyle = "#ffffff";
+          ctx.fillRect(0, 0, canvas.width, canvas.height);
+          await page.render({ canvasContext: ctx, viewport } as any).promise;
+          
+          const blob = await new Promise<Blob | null>(r => canvas.toBlob(r, "image/jpeg", 0.6));
+          if (blob) {
+            const imgBuf = await blob.arrayBuffer();
+            const img = await newDoc.embedJpg(imgBuf);
+            const newPage = newDoc.addPage([viewport.width, viewport.height]);
+            newPage.drawImage(img, {
+              x: 0,
+              y: 0,
+              width: viewport.width,
+              height: viewport.height,
+            });
+          }
+        }
+        pdfBytes = await newDoc.save({ useObjectStreams: true });
+      } else {
+        const srcDoc = await PDFDocument.load(srcBytes, { ignoreEncryption: true });
 
-      // Re-serialize: pdf-lib re-builds the xref table and deduplicates indirect objects
-      const newDoc = await PDFDocument.create();
-      const pages = await newDoc.copyPages(srcDoc, srcDoc.getPageIndices());
-      for (const page of pages) newDoc.addPage(page);
+        // Strip metadata
+        srcDoc.setTitle("");
+        srcDoc.setAuthor("");
+        srcDoc.setSubject("");
+        srcDoc.setKeywords([]);
+        srcDoc.setProducer("");
+        srcDoc.setCreator("");
 
-      const pdfBytes = await newDoc.save();
+        // Re-serialize: pdf-lib re-builds the xref table and deduplicates indirect objects
+        const newDoc = await PDFDocument.create();
+        const pages = await newDoc.copyPages(srcDoc, srcDoc.getPageIndices());
+        for (const page of pages) newDoc.addPage(page);
+
+        pdfBytes = await newDoc.save({ useObjectStreams: true });
+      }
 
       setResult({
         originalSize: file.size,
@@ -161,13 +199,21 @@ export default function CompressPdf() {
             </div>
           )}
 
-          {/* Info notice */}
+          {/* Options */}
           {!result && !processing && (
-            <div className="rounded-lg bg-surface-2 px-3 py-2">
-              <p className="text-xs text-ink-3">
-                Compression strips metadata and re-serializes the PDF structure.
-                Images are not re-sampled — results vary depending on original PDF composition.
-              </p>
+            <div className="rounded-xl border border-border p-4 bg-surface-2/30">
+              <label className="flex items-center gap-3 cursor-pointer">
+                <input 
+                  type="checkbox" 
+                  checked={aggressive}
+                  onChange={(e) => setAggressive(e.target.checked)}
+                  className="w-4 h-4 rounded border-border text-accent focus:ring-accent"
+                />
+                <div>
+                  <p className="text-sm font-medium text-ink">Aggressive Compression</p>
+                  <p className="text-xs text-ink-2 mt-0.5">Flattens the entire PDF into images. Drastically reduces size but removes text searchability.</p>
+                </div>
+              </label>
             </div>
           )}
 
