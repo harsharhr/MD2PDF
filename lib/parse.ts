@@ -1,5 +1,10 @@
+// Import the inner module directly, NOT the package root. pdf-parse's root
+// index.js has debug code that runs at import time when `!module.parent`
+// (true inside a bundled serverless function) — it tries to read a bundled
+// test fixture ('./test/data/05-versions-space.pdf') that doesn't exist in
+// production, crashing every conversion before parsing even starts.
 // eslint-disable-next-line @typescript-eslint/no-require-imports
-const pdfParse = require("pdf-parse");
+const pdfParse = require("pdf-parse/lib/pdf-parse.js");
 import mammoth from "mammoth";
 import TurndownService from "turndown";
 import * as XLSX from "xlsx";
