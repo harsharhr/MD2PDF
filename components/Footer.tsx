@@ -68,7 +68,7 @@ export default function Footer() {
         </div>
         <div className="mt-12 flex flex-col items-start justify-between gap-3 border-t border-border pt-6 text-xs text-ink-3 sm:flex-row sm:items-center">
           <p>© {2026} PDFtoolsmd.com. Every PDF tool you need, free and private.</p>
-          <p>Client-side processing — your files never leave your device.</p>
+          <p>Organize &amp; edit tools run in your browser. Format conversions process securely and are deleted after.</p>
         </div>
       </div>
     </footer>

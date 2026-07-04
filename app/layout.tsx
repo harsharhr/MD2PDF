@@ -18,7 +18,10 @@ const geistMono = Geist_Mono({
 // Google AdSense publisher id — change here if the account changes.
 const ADSENSE_CLIENT = "ca-pub-4910237367995817";
 
-const SITE_URL = "https://pdftoolsmd.com";
+// Points at the actual live deployment. pdftoolsmd.com isn't connected yet —
+// pointing canonical/OG tags at an unresolvable domain would hurt indexing of
+// the real site. Swap this to the custom domain once it's connected in Vercel.
+const SITE_URL = "https://pdftoolsmd.vercel.app";
 
 export const metadata: Metadata = {
   metadataBase: new URL(SITE_URL),

@@ -2,7 +2,8 @@ import type { MetadataRoute } from "next";
 import { FORMAT_PAIRS } from "@/lib/formats";
 import { TOOLS } from "@/lib/tools";
 
-const SITE_URL = "https://pdftoolsmd.com";
+// Update to the custom domain once pdftoolsmd.com is connected in Vercel.
+const SITE_URL = "https://pdftoolsmd.vercel.app";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const staticPages = ["", "/pricing", "/security"].map((path) => ({
