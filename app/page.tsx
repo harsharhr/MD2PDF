@@ -35,9 +35,10 @@ const CATEGORY_ICON_COLORS: Record<ToolCategory, string> = {
   organize: "bg-indigo-100 text-indigo-600 dark:bg-indigo-500/15 dark:text-indigo-400",
   optimize: "bg-cyan-100 text-cyan-600 dark:bg-cyan-500/15 dark:text-cyan-400",
   "convert-to-pdf": "bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-400",
-  "convert-from-pdf": "bg-orange-100 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400",
-  security: "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-400",
-  edit: "bg-teal-100 text-teal-600 dark:bg-teal-500/15 dark:text-teal-400",
+  "convert-from-pdf": "bg-amber-100 text-amber-600 dark:bg-amber-500/15 dark:text-amber-400",
+  "convert-from-md": "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-400",
+  security: "bg-violet-100 text-violet-600 dark:bg-violet-500/15 dark:text-violet-400",
+  edit: "bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-400",
 };
 
 export default function Home() {
