@@ -40,22 +40,22 @@ const PDF_SOURCE = {
 const DOCX_SOURCE = {
   label: "DOCX",
   name: "Word",
-  accept: ".docx,application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-  extensions: ["docx"],
+  accept: ".docx,.doc,application/vnd.openxmlformats-officedocument.wordprocessingml.document,application/msword",
+  extensions: ["docx", "doc"],
 };
 
 const XLSX_SOURCE = {
   label: "XLSX",
   name: "Excel",
-  accept: ".xlsx,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-  extensions: ["xlsx"],
+  accept: ".xlsx,.xls,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel",
+  extensions: ["xlsx", "xls"],
 };
 
 const PPTX_SOURCE = {
   label: "PPTX",
   name: "PowerPoint",
-  accept: ".pptx,application/vnd.openxmlformats-officedocument.presentationml.presentation",
-  extensions: ["pptx"],
+  accept: ".pptx,.ppt,application/vnd.openxmlformats-officedocument.presentationml.presentation,application/vnd.ms-powerpoint",
+  extensions: ["pptx", "ppt"],
 };
 
 export const FORMAT_PAIRS: FormatPair[] = [

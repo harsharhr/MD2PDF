@@ -17,93 +17,113 @@ function cleanMarkdown(md: string): string {
  * Extracts text from a PDF buffer and formats it as basic Markdown.
  */
 async function pdfToMd(buffer: Buffer): Promise<string> {
-  const data = await pdfParse(buffer);
-  // pdf-parse gives raw text. We'll treat paragraphs as lines.
-  const text: string = data.text;
-  
-  // Basic heuristic: if a line is short and has no trailing punctuation, maybe it's a heading.
-  const lines = text.split("\n");
-  const mdLines = lines.map((line) => {
-    const trimmed = line.trim();
-    if (!trimmed) return "";
-    // If it's short and uppercase, treat as heading
-    if (trimmed.length > 2 && trimmed.length < 60 && trimmed === trimmed.toUpperCase()) {
-      return `\n## ${trimmed}\n`;
-    }
-    return trimmed;
-  });
+  try {
+    const data = await pdfParse(buffer);
+    // pdf-parse gives raw text. We'll treat paragraphs as lines.
+    const text: string = data.text;
+    
+    // Basic heuristic: if a line is short and has no trailing punctuation, maybe it's a heading.
+    const lines = text.split("\n");
+    const mdLines = lines.map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return "";
+      // If it's short and uppercase, treat as heading
+      if (trimmed.length > 2 && trimmed.length < 60 && trimmed === trimmed.toUpperCase()) {
+        return `\n## ${trimmed}\n`;
+      }
+      return trimmed;
+    });
 
-  return cleanMarkdown(mdLines.join("\n"));
+    return cleanMarkdown(mdLines.join("\n"));
+  } catch (error) {
+    console.error("Failed to parse PDF:", error);
+    throw new Error("Could not extract text from the PDF. The file might be corrupted, password protected, or contain only scanned images.");
+  }
 }
 
 /**
  * Extracts content from a DOCX buffer using mammoth and converts to Markdown using turndown.
  */
 async function docxToMd(buffer: Buffer): Promise<string> {
-  const result = await mammoth.convertToHtml({ buffer });
-  const html = result.value;
-  
-  const turndownService = new TurndownService({
-    headingStyle: "atx",
-    hr: "---",
-    bulletListMarker: "-",
-    codeBlockStyle: "fenced",
-  });
-  
-  const md = turndownService.turndown(html);
-  return cleanMarkdown(md);
+  try {
+    const result = await mammoth.convertToHtml({ buffer });
+    const html = result.value;
+    
+    const turndownService = new TurndownService({
+      headingStyle: "atx",
+      hr: "---",
+      bulletListMarker: "-",
+      codeBlockStyle: "fenced",
+    });
+    
+    const md = turndownService.turndown(html);
+    return cleanMarkdown(md);
+  } catch (error) {
+    console.error("Failed to parse DOCX:", error);
+    throw new Error("Could not extract text from the Word document. The file might be corrupted or password protected.");
+  }
 }
 
 /**
  * Extracts all sheets from an XLSX buffer and formats them as Markdown tables.
  */
 function xlsxToMd(buffer: Buffer): string {
-  const wb = XLSX.read(buffer, { type: "buffer" });
-  let md = "";
+  try {
+    const wb = XLSX.read(buffer, { type: "buffer" });
+    let md = "";
 
-  for (const sheetName of wb.SheetNames) {
-    const ws = wb.Sheets[sheetName];
-    // Convert sheet to an array of arrays
-    const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
-    
-    if (rows.length === 0) continue;
-    
-    md += `## ${sheetName}\n\n`;
-    
-    // Build Markdown table
-    const headerRow = rows[0] || [];
-    md += "| " + headerRow.map((c) => String(c || "").trim()).join(" | ") + " |\n";
-    md += "| " + headerRow.map(() => "---").join(" | ") + " |\n";
-    
-    for (let i = 1; i < rows.length; i++) {
-      const row = rows[i] || [];
-      // Pad row to match header length
-      const paddedRow = Array.from({ length: headerRow.length }).map((_, colIdx) => {
-        return String(row[colIdx] || "").trim().replace(/\n/g, " ");
-      });
-      md += "| " + paddedRow.join(" | ") + " |\n";
+    for (const sheetName of wb.SheetNames) {
+      const ws = wb.Sheets[sheetName];
+      // Convert sheet to an array of arrays
+      const rows = XLSX.utils.sheet_to_json(ws, { header: 1 }) as any[][];
+      
+      if (rows.length === 0) continue;
+      
+      md += `## ${sheetName}\n\n`;
+      
+      // Build Markdown table
+      const headerRow = rows[0] || [];
+      md += "| " + headerRow.map((c) => String(c || "").trim()).join(" | ") + " |\n";
+      md += "| " + headerRow.map(() => "---").join(" | ") + " |\n";
+      
+      for (let i = 1; i < rows.length; i++) {
+        const row = rows[i] || [];
+        // Pad row to match header length
+        const paddedRow = Array.from({ length: headerRow.length }).map((_, colIdx) => {
+          return String(row[colIdx] || "").trim().replace(/\n/g, " ");
+        });
+        md += "| " + paddedRow.join(" | ") + " |\n";
+      }
+      md += "\n\n";
     }
-    md += "\n\n";
-  }
 
-  return cleanMarkdown(md);
+    return cleanMarkdown(md);
+  } catch (error) {
+    console.error("Failed to parse XLSX:", error);
+    throw new Error("Could not extract data from the Excel spreadsheet. The file might be corrupted or password protected.");
+  }
 }
 
 /**
  * Extracts text from a PPTX buffer using officeparser.
  */
 async function pptxToMd(buffer: Buffer): Promise<string> {
-  const ast = await officeParser.parseOffice(buffer);
-  const text: string = ast.toText();
-  
-  const lines = text.split("\n");
-  const mdLines = lines.map((line) => {
-    const trimmed = line.trim();
-    if (!trimmed) return "";
-    return `- ${trimmed}`;
-  });
-  
-  return cleanMarkdown(mdLines.join("\n"));
+  try {
+    const ast = await officeParser.parseOffice(buffer);
+    const text: string = ast.toText();
+    
+    const lines = text.split("\n");
+    const mdLines = lines.map((line) => {
+      const trimmed = line.trim();
+      if (!trimmed) return "";
+      return `- ${trimmed}`;
+    });
+    
+    return cleanMarkdown(mdLines.join("\n"));
+  } catch (error) {
+    console.error("Failed to parse PPTX:", error);
+    throw new Error("Could not extract text from the PowerPoint presentation. The file might be corrupted or password protected.");
+  }
 }
 
 /**

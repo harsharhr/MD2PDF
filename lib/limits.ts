@@ -6,8 +6,25 @@ export const MAX_UPLOAD_LABEL = "25 MB";
 // Content types we accept for Markdown source files. Browsers are inconsistent
 // about Markdown, so we allow text/* and the generic octet-stream fallback.
 export const ALLOWED_CONTENT_TYPES = [
+  // Markdown & Text
   "text/markdown",
   "text/x-markdown",
   "text/plain",
+  "text/html",
+  // PDF
+  "application/pdf",
+  // Word
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/msword",
+  // PowerPoint
+  "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+  "application/vnd.ms-powerpoint",
+  // Excel
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "application/vnd.ms-excel",
+  // Images
+  "image/jpeg",
+  "image/png",
+  // Fallback
   "application/octet-stream",
 ];
