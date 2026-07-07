@@ -21,7 +21,6 @@
     "mammoth": "^1.12.0",
     "markdown-it": "^14.3.0",
     "next": "16.2.10",
-    "node-qpdf": "^1.0.3",
     "officeparser": "^7.2.3",
     "pdf-lib": "^1.17.1",
     "pdf-parse": "^1.1.1",

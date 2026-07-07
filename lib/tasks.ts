@@ -53,8 +53,23 @@ export async function createTask(input: {
       (${id}, ${input.sourceFilename}, ${input.sourceFormat}, ${input.targetFormat},
        'processing', ${input.inputSizeBytes}, ${input.outputFilename}, ${input.sourceUrl})
   `;
-  // Opportunistic cleanup of task rows older than 24h.
-  await sql`DELETE FROM conversion_tasks WHERE started_at < now() - interval '24 hours'`;
+  // Opportunistic cleanup of tasks older than 24h. Delete the output blobs
+  // FIRST, then the rows — deleting rows alone leaks the converted files in
+  // Blob storage forever (they'd have no surviving reference to clean by).
+  try {
+    const expired = (await sql`
+      SELECT output_url FROM conversion_tasks
+      WHERE started_at < now() - interval '24 hours' AND output_url IS NOT NULL
+      LIMIT 100
+    `) as { output_url: string }[];
+    if (expired.length) {
+      const { del } = await import("@vercel/blob");
+      await del(expired.map((r) => r.output_url));
+    }
+    await sql`DELETE FROM conversion_tasks WHERE started_at < now() - interval '24 hours'`;
+  } catch {
+    /* cleanup is best-effort; never block a new conversion on it */
+  }
   return id;
 }
 
